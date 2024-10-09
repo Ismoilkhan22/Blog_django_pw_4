@@ -7,6 +7,7 @@ class PublishedManager(models.Manager):
     def queryset(self):
         return super().get_queryset().filter(status=Post.Status.PUBLISHED)
 
+
 class Post(models.Model):
     class Status(models.TextChoices):
         DRAFT = 'DF', 'DRAFT'
@@ -29,7 +30,6 @@ class Post(models.Model):
 
     class Meta:
         ordering = ['-publish']
-        
 
     def __str__(self):
         return self.title
