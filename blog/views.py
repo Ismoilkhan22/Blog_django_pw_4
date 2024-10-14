@@ -1,12 +1,13 @@
+from django.core.mail import send_mail
 from django.shortcuts import render
 
 from django.http import Http404
 from django.shortcuts import render, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage
 
-from .forms import EmailPostForm
-from .models import Post
-
+from .forms import EmailPostForm, CommentForm
+from .models import Post, Comment
+from django.views.decorators.http import require_POST
 from django.views.generic import ListView
 
 
@@ -40,19 +41,45 @@ def post_detail(request, year, month, day, post):
                              publish__year=year,
                              publish__month=month,
                              publish__day=day)
-    return render(request, 'detail.html', {'post': post})
+    # list of active comments for this post
+    comments = post.comments.filter(active=True)
+    # form for users to comment
+    form = CommentForm()
+    return render(request, 'detail.html', {'post': post, 'comments': comments, 'form': form})
 
 
 def post_share(request, post_id):
     # post id ni olish
     post = get_object_or_404(Post, id=post_id, status=Post.Status.PUBLISHED)
+    sent = False
+
     if request.method == 'POST':
         # forma yuborish
         form = EmailPostForm(request.POST)
         if form.is_valid():
-            # forma maydonlari validatsiyadan o'tdi
+            # form maydonlari validatsiyadan o'tdi
             cd = form.cleaned_data
-            # ...elektron pochtaga junatish
+            post_url = request.build_absolute_uri(post.get_absolute_url())
+            subject = f"{cd['name']}sizga {post.title} ni o'qishni tavsiya etadi"
+            message = f"{cd['name']}ning izohlari {cd['comments']}"
+            send_mail(subject, message, 'your_account@gmail.com', [cd['to']])
+            sent = True
     else:
         form = EmailPostForm()
     return render(request, 'share.html', {'post': post, 'form': form})
+
+
+@require_POST
+def post_comment(request, post_id):
+    post = get_object_or_404(Post, id=post_id, status=Post.Status.PUBLISHED)
+    comment = None
+    # A comment was posted
+    form = CommentForm(data=request.POST)
+    if form.is_valid():
+        # create comment objects without saving it to the database
+        comment = form.save(commit=False)
+        # Assing the post to the comment
+        comment.post = post
+        # saving the comment to the database
+        comment.save()
+    return render(request, 'comment.html', {'post': post, 'form': form, 'comment': comment})
