@@ -36,7 +36,8 @@ class Post(models.Model):
         return self.title
 
     def get_absolute_url(self):
-        return reverse('post_detail', args=[self.publish.year,
+        return reverse('blog:post_detail', args=[self.publish.year,
                                             self.publish.month,
                                             self.publish.day,
                                             self.slug])
+# shu yerda men blog:post_detail qildim nega chunki menda urls.py fayilda app_name='blog' nomini qoshdim shu sababli 'blog:post.html' ko'rinishini oldi
