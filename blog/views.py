@@ -1,6 +1,6 @@
 from django.core.mail import send_mail
 from django.shortcuts import render
-
+from taggit.models import Tag
 from django.http import Http404
 from django.shortcuts import render, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage
@@ -11,28 +11,33 @@ from django.views.decorators.http import require_POST
 from django.views.generic import ListView
 
 
-class PostListView(ListView):
-    """
-    Muqobil post ro‘yxati ko‘rinishi
-    """
-    queryset = Post.published.all()
-    context_object_name = 'posts'
-    paginate_by = 3
-    template_name = 'list.html'
+# class PostListView(ListView):
+#     """
+#     Muqobil post ro‘yxati ko‘rinishi
+#     """
+#     queryset = Post.published.all()
+#     context_object_name = 'posts'
+#     paginate_by = 3
+#     template_name = 'list.html'
 
 
-# def post_list(request):
-#     post_lists = Post.published.all()
-#     # Pagination with 3 posts per page
-#     paginator = Paginator(post_lists, 3)
-#     page_number = request.GET.get('page', 1)
-#     try:
-#         posts = paginator.page(page_number)
-#     except EmptyPage:
-#         posts = paginator.page(paginator.num_pages)
-#     return render(request,
-#                   'list.html',
-#                   {'posts': posts})
+def post_list(request, tag_slug=None):
+    post_lists = Post.published.all()
+    tag = None
+    if tag_slug:
+        tag = get_object_or_404(Tag, slug=tag_slug)
+        post_lists = post_lists.filter(tags__in=[tag])
+    # Pagination with 3 posts per page
+    paginator = Paginator(post_lists, 3)
+    page_number = request.GET.get('page', 1)
+    try:
+        posts = paginator.page(page_number)
+    except EmptyPage:
+        posts = paginator.page(paginator.num_pages)
+    return render(request,
+                  'list.html',
+                  {'posts': posts,
+                   'tag': tag})
 
 
 def post_detail(request, year, month, day, post):
