@@ -22,7 +22,8 @@ Share this post
         Comment {{ forloop.counter }} by {{ comment.name }}
         {{ comment.created }}
     </p>
-    {{ comment.body | liner breaks }}
+    {{ comment.body|linebreaksbr }}
+ }}
 </div>
 {% empty %}
 <p> There are no comments. </p>
