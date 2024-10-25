@@ -12,6 +12,8 @@ from django.views.decorators.http import require_POST
 from django.views.generic import ListView
 from django.contrib.postgres.search import SearchVector,SearchQuery, SearchRank
 from .forms import SearchForm
+from django.contrib.postgres.search import TrigramSimilarity
+
 
 # class PostListView(ListView):
 #     """
@@ -105,15 +107,8 @@ def post_search(request):
     results = []
     if 'query' in request.GET:
         form = SearchForm(request.GET)
-    if form.is_valid():
-        query = form.cleaned_data['query']
-        search_vector = SearchVector('title', weight='A')+\
-            SearchVector('body', weight='B')
-        search_query = SearchQuery(query, config='spanish')
-        results = Post.published.annotate(
-        search=search_vector, rank=SearchRank(search_vector, search_query)).filter(rank__gte=0.3).order_by('-rank')
-    return render(request,
-    'search.html',
-    {'form': form,
-    'query': query,
-    'results': results})
+        if form.is_valid():
+            query = form.cleaned_data['query']
+            results = Post.published.annotate(
+            similarity=TrigramSimilarity('title', query),).filter(similarity__gt=0.1).order_by('-similarity')
+    return render(request,'search.html',{'form': form,'query': query,'results': results})
